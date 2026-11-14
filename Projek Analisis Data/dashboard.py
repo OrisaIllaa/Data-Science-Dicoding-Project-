@@ -195,16 +195,64 @@ for column in date_columns:
 main_data.dropna(axis=0, inplace=True)
 
 # Memilih data Januari–Desember 2017.
-orders2017 = main_data[
+# Filter tanggal pembelian
+
+# Membatasi data pada Januari–Desember 2017.
+data_2017 = main_data[
     (main_data["order_purchase_timestamp"] >= "2017-01-01") &
     (main_data["order_purchase_timestamp"] < "2018-01-01")
 ].copy()
 
+if data_2017.empty:
+    st.error("Tidak ada data untuk periode tahun 2017.")
+    st.stop()
+
+# Menentukan batas tanggal yang tersedia.
+min_date = data_2017["order_purchase_timestamp"].min().date()
+max_date = data_2017["order_purchase_timestamp"].max().date()
+
+# Membuat filter tanggal pada sidebar.
+st.sidebar.header("Filter Data")
+
+st.sidebar.markdown("**Pilih Rentang Tanggal Pembelian**")
+
+selected_dates = st.sidebar.date_input(
+    "Periode analisis",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date,
+    format="DD/MM/YYYY"
+)
+
+# Memeriksa rentang tanggal yang dipilih.
+if len(selected_dates) == 2:
+    start_date, end_date = selected_dates
+
+    # Memfilter data berdasarkan tanggal pembelian.
+    orders2017 = data_2017[
+        (data_2017["order_purchase_timestamp"] >= pd.Timestamp(start_date)) &
+        (data_2017["order_purchase_timestamp"] < 
+         pd.Timestamp(end_date) + pd.Timedelta(days=1))
+    ].copy()
+
+else:
+    st.sidebar.warning("Silakan pilih tanggal awal dan tanggal akhir.")
+    st.stop()
+
+# Menampilkan informasi filter.
+st.sidebar.success("Filter berhasil diterapkan.")
+
+st.sidebar.write(
+    f"**Periode:** {start_date.strftime('%d-%m-%Y')} "
+    f"sampai {end_date.strftime('%d-%m-%Y')}"
+)
+
+st.sidebar.write(
+    f"**Jumlah pesanan unik:** {orders2017['order_id'].nunique():,}"
+)
+
 if orders2017.empty:
-    st.error(
-        "Tidak ada data untuk periode Januari–Desember 2017. "
-        "Periksa kembali isi main_data.csv."
-    )
+    st.warning("Tidak ada data pada rentang tanggal yang dipilih.")
     st.stop()
 
 # prepare data
