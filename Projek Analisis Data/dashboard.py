@@ -150,14 +150,6 @@ main_data.columns = (
     .str.strip()
 )
 
-# Kolom metode pembayaran pada CSV ini berupa empat kolom hitungan,
-# bukan satu kolom bernama payment_type.
-payment_columns = {
-    "boleto": "payment_count_boleto",
-    "credit_card": "payment_count_credit_card",
-    "debit_card": "payment_count_debit_card",
-    "voucher": "payment_count_voucher"
-}
 
 # Memastikan kolom-kolom yang diperlukan tersedia.
 required_columns = [
@@ -167,7 +159,7 @@ required_columns = [
     "order_delivered_carrier_date",
     "order_delivered_customer_date",
     "order_estimated_delivery_date",
-    *payment_columns.values()
+    "payment_type"
 ]
 
 missing_columns = [
@@ -197,12 +189,6 @@ for column in date_columns:
         main_data[column],
         errors="coerce"
     )
-
-# Memastikan kolom jumlah pembayaran bertipe numerik sebelum agregasi.
-for column in payment_columns.values():
-    main_data[column] = pd.to_numeric(
-        main_data[column], errors="coerce"
-    ).fillna(0)
 
 # Mengikuti proses cleaning pada notebook:
 # menghapus baris yang memiliki missing value.
@@ -262,29 +248,8 @@ different_day_percentage = (different_day_count / total_orders) * 100
 # Q3: menghitung metode pembayaran dari kolom hitungan di main_data.csv.
 # Satu order bisa muncul di beberapa baris setelah penggabungan data.
 # Karena itu, ambil satu nilai per order terlebih dahulu agar tidak terhitung berulang.
-payment_data = orders2017.groupby("order_id")[
-    list(payment_columns.values())
-].max()
-
-# Pastikan semua kolom hitungan bertipe numerik.
-for column in payment_data.columns:
-    payment_data[column] = pd.to_numeric(
-        payment_data[column], errors="coerce"
-    ).fillna(0)
-
-payment_counts = payment_data.sum()
-payment_counts.index = [
-    payment_name
-    for payment_name, column_name in payment_columns.items()
-]
-payment_counts = payment_counts.sort_values(ascending=False)
-
-if payment_counts.sum() == 0:
-    st.error(
-        "Kolom payment_count_* ditemukan, tetapi seluruh jumlah transaksi bernilai 0. "
-        "Periksa isi kolom pembayaran pada main_data.csv."
-    )
-    st.stop()
+# Q3: menghitung metode pembayaran.
+payment_counts = orders2017["payment_type"].value_counts()
 
 payment_percentage = (
     payment_counts / payment_counts.sum()
