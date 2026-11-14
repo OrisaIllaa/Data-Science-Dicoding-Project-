@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="E-Commerce Data Analysis",
     page_icon="🛍️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # tampilan dashboard
